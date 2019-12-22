@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
-using JwtService.Database;
 using JwtService.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace JwtService.Controllers
 {
@@ -14,13 +18,16 @@ namespace JwtService.Controllers
     {
         SignInManager<IdentityUser> _signInManager;
         UserManager<IdentityUser> _userManager;
+        AppSettings _appSettings;
 
         public AuthController(
             SignInManager<IdentityUser> signInManager,
-            UserManager<IdentityUser> userManager)
+            UserManager<IdentityUser> userManager,
+            IOptions<AppSettings> appSettings)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _appSettings = appSettings.Value;
         }
 
         [HttpPost("register")]
@@ -41,7 +48,7 @@ namespace JwtService.Controllers
 
             await _signInManager.SignInAsync(user, false);
 
-            return Ok();
+            return Ok(await GetAuthResponse(user.Email));
         }
 
         [HttpPost("login")]
@@ -54,14 +61,39 @@ namespace JwtService.Controllers
             if (!result.Succeeded) 
                 return BadRequest("Invalid username or password");
 
-            return Ok();
-
+            return Ok(await GetAuthResponse(loginUser.Email));
         }
 
-        [HttpGet()]
-        public string Get()
+        private async Task<AuthResponse> GetAuthResponse(string userEmail)
         {
-            return "Hello";
+            var user = await _userManager.FindByEmailAsync(userEmail);
+
+            var identityClaims = new ClaimsIdentity();
+            identityClaims.AddClaims(await _userManager.GetClaimsAsync(user));
+
+            return new AuthResponse()
+            {
+                Email = user.Email,
+                Username = user.UserName,
+                Token = CreateToken(user, identityClaims)
+            };
+        }
+
+        private string CreateToken(IdentityUser user, ClaimsIdentity claims)
+        {
+            var tokenHandle = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+
+            var tokenDescription = new SecurityTokenDescriptor
+            {
+                Subject = claims,
+                Issuer = _appSettings.Issuer,
+                Audience = _appSettings.Audience,
+                Expires = DateTime.UtcNow.AddHours(_appSettings.ExpirationHours),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            return tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
         }
     }
 }
