@@ -5,7 +5,7 @@ namespace JwtService.Models
     public class LoginUser
     {
         [Required]
-        [EmailAddress(ErrorMessage = "Invalid e-mail")]
+        [EmailAddress]
         public string Email { get; set; }
 
         [Required]

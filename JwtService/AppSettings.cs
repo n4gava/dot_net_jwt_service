@@ -9,7 +9,7 @@ namespace JwtService
     {
         public string Secret { get; set; }
 
-        public int ExpirationHours { get; set; }
+        public int ExpirationMinutes { get; set; }
 
         public string Issuer { get; set; }
 

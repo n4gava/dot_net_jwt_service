@@ -1,16 +1,11 @@
-﻿using JwtService.Database;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using JwtService.Business.Implementations;
+using JwtService.Business.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Tokens;
-using System;
-using System.ComponentModel;
-using System.Text;
 
 namespace JwtService
 {
@@ -32,6 +27,14 @@ namespace JwtService
             services.ConfigureAuthentication(appSettings);
 
             services.AddControllers();
+            services.Configure<ApiBehaviorOptions>(opt =>
+            {
+                // Supress Model State validation from ApiControllerAttribute
+                opt.SuppressModelStateInvalidFilter = true;
+            });
+
+            services.AddScoped<ITokenBusiness, TokenBusiness>();
+            services.AddScoped<IUserBusiness, UserBusiness>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

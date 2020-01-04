@@ -14,5 +14,7 @@ namespace JwtService.Database
         {
 
         }
+
+        public DbSet<UserTokens> Tokens { get; set; }
     }
 }

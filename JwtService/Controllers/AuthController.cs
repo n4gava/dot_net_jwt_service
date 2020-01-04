@@ -4,6 +4,10 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using JwtService.Business.Interfaces;
+using JwtService.Commons;
+using JwtService.Commons.Interfaces;
+using JwtService.Controllers.Attributes;
 using JwtService.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,86 +18,72 @@ namespace JwtService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ValidateModelState]
+    [ResultRequest]
     public class AuthController : ControllerBase
     {
         SignInManager<IdentityUser> _signInManager;
-        UserManager<IdentityUser> _userManager;
-        AppSettings _appSettings;
+        ITokenBusiness _tokenBusiness;
+        IUserBusiness _userBusiness;
 
         public AuthController(
             SignInManager<IdentityUser> signInManager,
-            UserManager<IdentityUser> userManager,
-            IOptions<AppSettings> appSettings)
+            ITokenBusiness tokenBusiness,
+            IUserBusiness userBusiness
+            )
         {
-            _userManager = userManager;
             _signInManager = signInManager;
-            _appSettings = appSettings.Value;
+            _tokenBusiness = tokenBusiness;
+            _userBusiness = userBusiness;
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult> Register(RegisterUser registerUser)
+        public async Task<IResult> Register(RegisterUser registerUser)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
+            var createUser = await _userBusiness.CreateUser(registerUser.Email, registerUser.Password);
 
-            var user = new IdentityUser()
-            {
-                UserName = registerUser.Email,
-                Email = registerUser.Email,
-                EmailConfirmed = true
-            };
+            if (!createUser)
+                return createUser;
 
-            var result = await _userManager.CreateAsync(user, registerUser.Password);
-
-            if (!result.Succeeded) return BadRequest(result.Errors);
+            var user = createUser.Value;
 
             await _signInManager.SignInAsync(user, false);
-
-            return Ok(await GetAuthResponse(user.Email));
+            return await GetAuthResponse(user.Email);
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult> Login(LoginUser loginUser)
+        public async Task<IResult> Login(LoginUser loginUser)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState.Values.SelectMany(e => e.Errors));
-
             var result = await _signInManager.PasswordSignInAsync(loginUser.Email, loginUser.Password, false, true);
 
             if (!result.Succeeded) 
-                return BadRequest("Invalid username or password");
+                return new Result("Invalid username or password");
 
-            return Ok(await GetAuthResponse(loginUser.Email));
+            return await GetAuthResponse(loginUser.Email);
         }
 
-        private async Task<AuthResponse> GetAuthResponse(string userEmail)
+        private async Task<Result<AuthResponse>> GetAuthResponse(string userEmail)
         {
-            var user = await _userManager.FindByEmailAsync(userEmail);
+            var resultAuthResponse = new Result<AuthResponse>();
+            var resultFindUser = await _userBusiness.FindUserByEmail(userEmail);
 
-            var identityClaims = new ClaimsIdentity();
-            identityClaims.AddClaims(await _userManager.GetClaimsAsync(user));
+            if (!resultFindUser)
+                return resultAuthResponse.Add(resultFindUser);
 
-            return new AuthResponse()
+            var user = resultFindUser.Value;
+            var resultGenerateToken = await _tokenBusiness.GenerateTokenByUser(user);
+
+            if (!resultGenerateToken)
+                return resultAuthResponse.Add(resultGenerateToken);
+
+            var authResponse = new AuthResponse()
             {
                 Email = user.Email,
                 Username = user.UserName,
-                Token = CreateToken(user, identityClaims)
-            };
-        }
-
-        private string CreateToken(IdentityUser user, ClaimsIdentity claims)
-        {
-            var tokenHandle = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-
-            var tokenDescription = new SecurityTokenDescriptor
-            {
-                Subject = claims,
-                Issuer = _appSettings.Issuer,
-                Audience = _appSettings.Audience,
-                Expires = DateTime.UtcNow.AddHours(_appSettings.ExpirationHours),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                Token = resultGenerateToken.Value
             };
 
-            return tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
+            return resultAuthResponse.Ok(authResponse);
         }
     }
 }
