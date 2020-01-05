@@ -24,6 +24,11 @@ namespace JwtService.Commons
             return result;
         }
 
+        public static Result<T> Add<T>(this Result<T> result, Exception exception)
+        {
+            result.AddError(exception.Message);
+            return result;
+        }
         public static Result<T> Add<T>(this Result<T> result, IEnumerable<string> errorMessages)
         {
             foreach (var errorMessage in errorMessages)

@@ -1,11 +1,9 @@
 ﻿using JwtService.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.Text;
 
 namespace JwtService
@@ -25,27 +23,6 @@ namespace JwtService
                 options.UseSqlServer(connectionString);
             });
         }
-
-        public static void ConfigureIdentity(this IServiceCollection services)
-        {
-            services.AddIdentity<IdentityUser, IdentityRole>(options =>
-            {
-                options.Password.RequireDigit = true;
-                options.Password.RequiredLength = 6;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireLowercase = false;
-
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-                options.Lockout.MaxFailedAccessAttempts = 5;
-
-                options.User.RequireUniqueEmail = true;
-                options.SignIn.RequireConfirmedEmail = true;
-            })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddDefaultTokenProviders();
-        }
-
         public static void ConfigureAuthentication(this IServiceCollection services, AppSettings appSettings)
         {
             var key = Encoding.ASCII.GetBytes(appSettings.Secret);

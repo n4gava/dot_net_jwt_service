@@ -48,5 +48,12 @@ namespace JwtService.Commons
             Errors.Add(errorMessage);
             Value = default(T);
         }
+
+        public Result<T2> Cast<T2>()
+        {
+            var newResult = new Result<T2>();
+            newResult.Errors = this.Errors;
+            return newResult;
+        }
     }
 }

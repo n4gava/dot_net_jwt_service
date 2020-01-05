@@ -7,6 +7,9 @@ using System.Text;
 using System;
 using JwtService.Commons;
 using System.Threading.Tasks;
+using JwtService.Repositories.Interfaces;
+using System.Security.Claims;
+using JwtService.Entities;
 
 namespace JwtService.Business.Implementations
 {
@@ -14,13 +17,16 @@ namespace JwtService.Business.Implementations
     {
         AppSettings _appSettings;
         IUserBusiness _userBusiness;
+        IUserTokenRepository _userTokenRepository;
 
         public TokenBusiness(
             IOptions<AppSettings> appSettings,
-            IUserBusiness userBusiness)
+            IUserBusiness userBusiness,
+            IUserTokenRepository userTokenRepository)
         {
             _appSettings = appSettings.Value;
             _userBusiness = userBusiness;
+            _userTokenRepository = userTokenRepository;
         }
 
         public async Task<Result<string>> GenerateTokenByUser(IdentityUser user)
@@ -33,22 +39,49 @@ namespace JwtService.Business.Implementations
 
             result.Add(resultClaimsIdentity);
 
-            var tokenHandle = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-
             if (!result)
                 return result;
 
+            var tokenDescription = GetSecurityTokenDescriptor(resultClaimsIdentity.Value);
+
+            string token = GenerateToken(tokenDescription);
+
+            _userTokenRepository.Save(GetUserToken(user, token));
+
+            return result.Ok(token);
+        }
+
+        private SecurityTokenDescriptor GetSecurityTokenDescriptor(ClaimsIdentity subject)
+        {
+            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+
             var tokenDescription = new SecurityTokenDescriptor
             {
-                Subject = resultClaimsIdentity.Value,
+                Subject = subject,
                 Issuer = _appSettings.Issuer,
                 Audience = _appSettings.Audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
-            string token = tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
-            return result.Ok(token);
+            return tokenDescription;
         }
+
+        private string GenerateToken(SecurityTokenDescriptor tokenDescription)
+        {
+            var tokenHandle = new JwtSecurityTokenHandler();
+            return tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
+        }
+
+        private UserToken GetUserToken(IdentityUser user, string token)
+        {
+            return new UserToken()
+            {
+                CreatedOn = DateTimeOffset.UtcNow,
+                Username = user.UserName,
+                ExpirationMinutes = _appSettings.ExpirationMinutes,
+                Token = token
+            };
+        }
+
     }
 }
