@@ -9,11 +9,16 @@ namespace JwtService.Commons
 {
     public class Result<T> : IResult
     {
-        public static bool operator true(Result<T> status) { return status.Succeeded; }
+        public static bool operator true(Result<T> result) { return result.Succeeded; }
 
-        public static bool operator false(Result<T> status) { return !status.Succeeded; }
+        public static bool operator false(Result<T> result) { return !result.Succeeded; }
 
-        public static bool operator !(Result<T> status) { return !status.Succeeded; }
+        public static bool operator !(Result<T> result) { return !result.Succeeded; }
+
+        public static implicit operator Result(Result<T> result)
+        {
+            return result.Cast<bool?>();
+        }
 
         public Result()
         {

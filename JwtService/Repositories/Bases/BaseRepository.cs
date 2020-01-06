@@ -15,19 +15,21 @@ namespace JwtService.Repositories.Bases
             _dbContext = dbContext;
         }
 
-        public async Task<Result> Save(T entity)
+        public virtual async Task<Result> Save(T entity)
         {
             return await Result.DoAndReturnResultAsync(async () =>
             {
                 await _dbContext.AddAsync(entity);
+                await _dbContext.SaveChangesAsync();
             });
         }
 
-        public Result Delete(T entity)
+        public virtual async Task<Result> Delete(T entity)
         {
-            return Result.DoAndReturnResult(() =>
+            return await Result.DoAndReturnResultAsync(async () =>
             {
                 _dbContext.Remove(entity);
+                await _dbContext.SaveChangesAsync();
             });
         }
     }

@@ -22,6 +22,8 @@ namespace JwtService
             {
                 options.UseSqlServer(connectionString);
             });
+
+            services.AddScoped<DbContext, AppDbContext>();
         }
         public static void ConfigureAuthentication(this IServiceCollection services, AppSettings appSettings)
         {

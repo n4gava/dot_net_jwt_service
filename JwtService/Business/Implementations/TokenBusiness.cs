@@ -29,35 +29,35 @@ namespace JwtService.Business.Implementations
             _userTokenRepository = userTokenRepository;
         }
 
-        public async Task<Result<string>> GenerateTokenByUser(IdentityUser user)
+        public async Task<Result<string>> GenerateTokenByUser(User user)
         {
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
 
             var result = new Result<string>();
-            var resultClaimsIdentity = await _userBusiness.FindClaimsByUser(user);
-
-            result.Add(resultClaimsIdentity);
 
             if (!result)
                 return result;
 
-            var tokenDescription = GetSecurityTokenDescriptor(resultClaimsIdentity.Value);
+            var tokenDescription = GetSecurityTokenDescriptor();
 
             string token = GenerateToken(tokenDescription);
 
-            _userTokenRepository.Save(GetUserToken(user, token));
+            var resultDeleteTokens = await _userTokenRepository.DeleteByUsername(user.Username);
+            if (!resultDeleteTokens)
+                return resultDeleteTokens.Cast<string>();
 
-            return result.Ok(token);
+            result.Add(await _userTokenRepository.Save(GetUserToken(user, token)));
+
+            return result ? result.Ok(token) : result;
         }
 
-        private SecurityTokenDescriptor GetSecurityTokenDescriptor(ClaimsIdentity subject)
+        private SecurityTokenDescriptor GetSecurityTokenDescriptor()
         {
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
 
             var tokenDescription = new SecurityTokenDescriptor
             {
-                Subject = subject,
                 Issuer = _appSettings.Issuer,
                 Audience = _appSettings.Audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -72,12 +72,12 @@ namespace JwtService.Business.Implementations
             return tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
         }
 
-        private UserToken GetUserToken(IdentityUser user, string token)
+        private UserToken GetUserToken(User user, string token)
         {
             return new UserToken()
             {
                 CreatedOn = DateTimeOffset.UtcNow,
-                Username = user.UserName,
+                Username = user.Username,
                 ExpirationMinutes = _appSettings.ExpirationMinutes,
                 Token = token
             };

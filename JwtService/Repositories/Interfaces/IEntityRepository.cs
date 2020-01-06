@@ -7,6 +7,6 @@ namespace JwtService.Repositories.Interfaces
     public interface IEntityRepository<T> where T : IEntity
     {
         Task<Result> Save(T entity);
-        Result Delete(T entity);
+        Task<Result> Delete(T entity);
     }
 }

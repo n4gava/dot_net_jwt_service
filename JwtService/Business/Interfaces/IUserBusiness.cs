@@ -8,5 +8,6 @@ namespace JwtService.Business.Interfaces
     {
         Task<Result<User>> CreateUser(string email, string password);
         Task<Result<User>> FindUserByEmail(string email);
+
     }
 }

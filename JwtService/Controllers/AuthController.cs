@@ -1,18 +1,10 @@
-﻿using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using JwtService.Business.Interfaces;
 using JwtService.Commons;
 using JwtService.Commons.Interfaces;
 using JwtService.Controllers.Attributes;
 using JwtService.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace JwtService.Controllers
 {
@@ -22,19 +14,19 @@ namespace JwtService.Controllers
     [ResultRequest]
     public class AuthController : ControllerBase
     {
-        SignInManager<IdentityUser> _signInManager;
         ITokenBusiness _tokenBusiness;
         IUserBusiness _userBusiness;
+        ISignInBusiness _signInBusiness;
 
         public AuthController(
-            SignInManager<IdentityUser> signInManager,
             ITokenBusiness tokenBusiness,
-            IUserBusiness userBusiness
+            IUserBusiness userBusiness,
+            ISignInBusiness signInBusiness
             )
         {
-            _signInManager = signInManager;
             _tokenBusiness = tokenBusiness;
             _userBusiness = userBusiness;
+            _signInBusiness = signInBusiness;
         }
 
         [HttpPost("register")]
@@ -47,43 +39,41 @@ namespace JwtService.Controllers
 
             var user = createUser.Value;
 
-            await _signInManager.SignInAsync(user, false);
             return await GetAuthResponse(user.Email);
         }
 
         [HttpPost("login")]
         public async Task<IResult> Login(LoginUser loginUser)
         {
-            var result = await _signInManager.PasswordSignInAsync(loginUser.Email, loginUser.Password, false, true);
+            var result = await _signInBusiness.Login(loginUser.Email, loginUser.Password);
 
-            if (!result.Succeeded) 
-                return new Result("Invalid username or password");
+            if (!result)
+                return result;
 
             return await GetAuthResponse(loginUser.Email);
         }
 
         private async Task<Result<AuthResponse>> GetAuthResponse(string userEmail)
         {
-            var resultAuthResponse = new Result<AuthResponse>();
             var resultFindUser = await _userBusiness.FindUserByEmail(userEmail);
 
             if (!resultFindUser)
-                return resultAuthResponse.Add(resultFindUser);
+                return resultFindUser.Cast<AuthResponse>();
 
             var user = resultFindUser.Value;
             var resultGenerateToken = await _tokenBusiness.GenerateTokenByUser(user);
 
             if (!resultGenerateToken)
-                return resultAuthResponse.Add(resultGenerateToken);
+                return resultGenerateToken.Cast<AuthResponse>();
 
             var authResponse = new AuthResponse()
             {
                 Email = user.Email,
-                Username = user.UserName,
+                Username = user.Username,
                 Token = resultGenerateToken.Value
             };
 
-            return resultAuthResponse.Ok(authResponse);
+            return authResponse.ToResult();
         }
     }
 }

@@ -28,7 +28,7 @@ namespace JwtService.Repositories.Implementations
             User user = await _dbContext.Users.FirstOrDefaultAsync(user => user.Email == email);
             
             if (user == null)
-                result.AddError("User was not registered.");
+                return result.Add("User was not registered.");
 
             return user.ToResult();
         }

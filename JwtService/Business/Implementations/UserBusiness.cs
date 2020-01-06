@@ -17,13 +17,22 @@ namespace JwtService.Business.Implementations
         }
         public async Task<Result<User>> CreateUser(string email, string password)
         {
+            var result = new Result<User>();
+
+            var findExistingUser = await FindUserByEmail(email);
+            if (findExistingUser)
+                return result.Add("Email already registered.");
+
             var user = new User()
             {
                 Username = email,
                 Email = email
             };
 
-            var result = (await _userRepository.Save(user, password)).Cast<User>();
+            result = (await _userRepository.Save(user, password)).Cast<User>();
+
+            if (!result)
+                return result;
 
             return result ? result.Ok(user) : result;
         }
@@ -31,23 +40,6 @@ namespace JwtService.Business.Implementations
         public async Task<Result<User>> FindUserByEmail(string email)
         {
             return await _userRepository.FindByEmail(email);
-        }
-
-        public async Task<Result<ClaimsIdentity>> FindClaimsByEmail(string email)
-        {
-            var resultFindUser = await FindUserByEmail(email);
-            if (!resultFindUser)
-                return new Result<ClaimsIdentity>().Add(resultFindUser);
-
-            return await FindClaimsByUser(resultFindUser.Value);
-        }
-
-        public async Task<Result<ClaimsIdentity>> FindClaimsByUser(IdentityUser user)
-        {
-            var claims = await _userManager.GetClaimsAsync(user);
-            var claimsIdentity = new ClaimsIdentity(claims);
-
-            return new Result<ClaimsIdentity>().Ok(claimsIdentity);
         }
     }
 }

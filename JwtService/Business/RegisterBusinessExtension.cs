@@ -10,6 +10,8 @@ namespace JwtService.Business
         {
             services.AddScoped<ITokenBusiness, TokenBusiness>();
             services.AddScoped<IUserBusiness, UserBusiness>();
+            services.AddScoped<ISignInBusiness, SignInBusiness>();
+            
         }
     }
 }
