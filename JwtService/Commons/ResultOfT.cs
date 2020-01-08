@@ -9,11 +9,16 @@ namespace JwtService.Commons
 {
     public class Result<T> : IResult
     {
-        public static bool operator true(Result<T> status) { return status.Succeeded; }
+        public static bool operator true(Result<T> result) { return result.Succeeded; }
 
-        public static bool operator false(Result<T> status) { return !status.Succeeded; }
+        public static bool operator false(Result<T> result) { return !result.Succeeded; }
 
-        public static bool operator !(Result<T> status) { return !status.Succeeded; }
+        public static bool operator !(Result<T> result) { return !result.Succeeded; }
+
+        public static implicit operator Result(Result<T> result)
+        {
+            return result.Cast<bool?>();
+        }
 
         public Result()
         {
@@ -47,6 +52,13 @@ namespace JwtService.Commons
 
             Errors.Add(errorMessage);
             Value = default(T);
+        }
+
+        public Result<T2> Cast<T2>()
+        {
+            var newResult = new Result<T2>();
+            newResult.Errors = this.Errors;
+            return newResult;
         }
     }
 }

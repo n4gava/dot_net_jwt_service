@@ -7,6 +7,9 @@ using System.Text;
 using System;
 using JwtService.Commons;
 using System.Threading.Tasks;
+using JwtService.Repositories.Interfaces;
+using System.Security.Claims;
+using JwtService.Entities;
 
 namespace JwtService.Business.Implementations
 {
@@ -14,41 +17,71 @@ namespace JwtService.Business.Implementations
     {
         AppSettings _appSettings;
         IUserBusiness _userBusiness;
+        IUserTokenRepository _userTokenRepository;
 
         public TokenBusiness(
             IOptions<AppSettings> appSettings,
-            IUserBusiness userBusiness)
+            IUserBusiness userBusiness,
+            IUserTokenRepository userTokenRepository)
         {
             _appSettings = appSettings.Value;
             _userBusiness = userBusiness;
+            _userTokenRepository = userTokenRepository;
         }
 
-        public async Task<Result<string>> GenerateTokenByUser(IdentityUser user)
+        public async Task<Result<string>> GenerateTokenByUser(User user)
         {
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
 
             var result = new Result<string>();
-            var resultClaimsIdentity = await _userBusiness.FindClaimsByUser(user);
-
-            result.Add(resultClaimsIdentity);
-
-            var tokenHandle = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
 
             if (!result)
                 return result;
 
+            var tokenDescription = GetSecurityTokenDescriptor();
+
+            string token = GenerateToken(tokenDescription);
+
+            var resultDeleteTokens = await _userTokenRepository.DeleteByUsername(user.Username);
+            if (!resultDeleteTokens)
+                return resultDeleteTokens.Cast<string>();
+
+            result.Add(await _userTokenRepository.Save(GetUserToken(user, token)));
+
+            return result ? result.Ok(token) : result;
+        }
+
+        private SecurityTokenDescriptor GetSecurityTokenDescriptor()
+        {
+            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+
             var tokenDescription = new SecurityTokenDescriptor
             {
-                Subject = resultClaimsIdentity.Value,
                 Issuer = _appSettings.Issuer,
                 Audience = _appSettings.Audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
-            string token = tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
-            return result.Ok(token);
+            return tokenDescription;
         }
+
+        private string GenerateToken(SecurityTokenDescriptor tokenDescription)
+        {
+            var tokenHandle = new JwtSecurityTokenHandler();
+            return tokenHandle.WriteToken(tokenHandle.CreateToken(tokenDescription));
+        }
+
+        private UserToken GetUserToken(User user, string token)
+        {
+            return new UserToken()
+            {
+                CreatedOn = DateTimeOffset.UtcNow,
+                Username = user.Username,
+                ExpirationMinutes = _appSettings.ExpirationMinutes,
+                Token = token
+            };
+        }
+
     }
 }

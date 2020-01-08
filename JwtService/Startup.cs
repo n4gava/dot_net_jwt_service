@@ -1,5 +1,6 @@
-﻿using JwtService.Business.Implementations;
+﻿using JwtService.Business;
 using JwtService.Business.Interfaces;
+using JwtService.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,6 @@ namespace JwtService
             var appSettings = services.ConfigureAppSettings(Configuration.GetSection("AppSettings"));
             
             services.ConfigureDbContext(Configuration.GetConnectionString("SqlServerDatabase"));
-            services.ConfigureIdentity();
             services.ConfigureAuthentication(appSettings);
 
             services.AddControllers();
@@ -33,8 +33,8 @@ namespace JwtService
                 opt.SuppressModelStateInvalidFilter = true;
             });
 
-            services.AddScoped<ITokenBusiness, TokenBusiness>();
-            services.AddScoped<IUserBusiness, UserBusiness>();
+            services.RegisterBusiness();
+            services.RegisterRepositories();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
