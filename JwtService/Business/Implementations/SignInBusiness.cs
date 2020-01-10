@@ -20,10 +20,10 @@ namespace JwtService.Business.Implementations
         {
             var result = new Result();
             var user = (await _userBusiness.FindUserByEmail(email)).Value;
-
+            
             if (user == null || user.Password != password)
-                return result.Add("Invalid username or password");
-
+                result.Add("Invalid username or password");
+                
             return result;
         }
     }

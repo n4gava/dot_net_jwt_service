@@ -5,8 +5,10 @@ namespace JwtService.Entities
     public class User : BaseEntity
     {
         [Required]
-        [MinLength(6)]
-        public string Username { get; set; }
+        public string FirstName { get; set; }
+
+        [Required]
+        public string LastName { get; set; }
 
         [Required]
         [EmailAddress]

@@ -32,5 +32,18 @@ namespace JwtService.Repositories.Bases
                 await _dbContext.SaveChangesAsync();
             });
         }
+
+        public virtual async Task<Result<T>> FindById(long id)
+        {
+            var result = new Result<T>();
+            var value = await _dbContext.FindAsync<T>(id);
+            if (value == null)
+            {
+                result.Add("Record not found.");
+                return result;
+            }
+
+            return result.Ok(value);
+        }
     }
 }

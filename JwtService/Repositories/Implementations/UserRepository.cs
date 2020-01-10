@@ -16,19 +16,16 @@ namespace JwtService.Repositories.Implementations
             _dbContext = dbContext;
         }
 
-        public async Task<Result> Save(User entity, string password)
-        {
-            entity.Password = password;
-            return await this.Save(entity);
-        }
-
         public async Task<Result<User>> FindByEmail(string email)
         {
             var result = new Result<User>();
-            User user = await _dbContext.Users.FirstOrDefaultAsync(user => user.Email == email);
-            
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+
             if (user == null)
-                return result.Add("User was not registered.");
+            {
+                result.Add("User was not registered.");
+                return result;
+            }
 
             return user.ToResult();
         }

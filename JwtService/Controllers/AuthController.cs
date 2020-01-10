@@ -4,6 +4,7 @@ using JwtService.Commons;
 using JwtService.Commons.Interfaces;
 using JwtService.Controllers.Attributes;
 using JwtService.Models;
+using JwtService.Models.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 namespace JwtService.Controllers
@@ -29,20 +30,7 @@ namespace JwtService.Controllers
             _signInBusiness = signInBusiness;
         }
 
-        [HttpPost("register")]
-        public async Task<IResult> Register(RegisterUser registerUser)
-        {
-            var createUser = await _userBusiness.CreateUser(registerUser.Email, registerUser.Password);
-
-            if (!createUser)
-                return createUser;
-
-            var user = createUser.Value;
-
-            return await GetAuthResponse(user.Email);
-        }
-
-        [HttpPost("login")]
+        [HttpPost("[action]")]
         public async Task<IResult> Login(LoginUser loginUser)
         {
             var result = await _signInBusiness.Login(loginUser.Email, loginUser.Password);
@@ -69,7 +57,6 @@ namespace JwtService.Controllers
             var authResponse = new AuthResponse()
             {
                 Email = user.Email,
-                Username = user.Username,
                 Token = resultGenerateToken.Value
             };
 

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace JwtService.Models
+namespace JwtService.Models.Auth
 {
     public class LoginUser
     {

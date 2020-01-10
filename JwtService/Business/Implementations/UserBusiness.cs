@@ -1,10 +1,12 @@
 ﻿using JwtService.Business.Interfaces;
 using JwtService.Commons;
 using JwtService.Entities;
+using JwtService.Models.User;
 using JwtService.Repositories.Interfaces;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System;
 
 namespace JwtService.Business.Implementations
 {
@@ -15,31 +17,55 @@ namespace JwtService.Business.Implementations
         {
             _userRepository = userRepository;
         }
-        public async Task<Result<User>> CreateUser(string email, string password)
+        public async Task<Result<User>> Save(UserVO userVO)
         {
-            var result = new Result<User>();
+            if (userVO == null)
+                throw new ArgumentNullException(nameof(userVO));
 
-            var findExistingUser = await FindUserByEmail(email);
+            var findExistingUser = await FindUserByEmail(userVO.Email);
+
             if (findExistingUser)
-                return result.Add("Email already registered.");
+                return new Result<User>("User is already registered.");
 
-            var user = new User()
-            {
-                Username = email,
-                Email = email
-            };
+            var user = new User();
 
-            result = (await _userRepository.Save(user, password)).Cast<User>();
+            var result = (await Save(user, userVO)).Cast<User>();
 
-            if (!result)
-                return result;
+            return result ? result.Ok(user) : result;
+        }
 
+        public async Task<Result<User>> Save(long id, UserVO userVO)
+        {
+            if (userVO == null)
+                throw new ArgumentNullException(nameof(userVO));
+
+            var findExistingUser = await FindUserById(id);
+            if (!findExistingUser)
+                return new Result<User>("User was not registered.");
+
+            var user = findExistingUser.Value;
+            var result = (await Save(user, userVO)).Cast<User>();
             return result ? result.Ok(user) : result;
         }
 
         public async Task<Result<User>> FindUserByEmail(string email)
         {
             return await _userRepository.FindByEmail(email);
+        }
+
+        public Task<Result<User>> FindUserById(long id)
+        {
+            return _userRepository.FindById(id);
+        }
+
+        private async Task<Result> Save(User user, UserVO userVO)
+        {
+            user.Email = userVO.Email;
+            user.FirstName = userVO.FirstName;
+            user.LastName = userVO.LastName;
+            user.Password = userVO.Password;
+
+            return (await _userRepository.Save(user)).Cast<User>();
         }
     }
 }

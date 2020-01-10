@@ -7,7 +7,7 @@ namespace JwtService.Database
     {
         public AppDbContext(DbContextOptions options) : base (options)
         {
-
+            
         }
 
         public DbSet<User> Users { get; set; }

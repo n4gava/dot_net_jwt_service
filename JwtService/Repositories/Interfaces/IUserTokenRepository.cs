@@ -6,6 +6,6 @@ namespace JwtService.Repositories.Interfaces
 {
     public interface IUserTokenRepository : IEntityRepository<UserToken>
     {
-        Task<Result> DeleteByUsername(string username);
+        Task<Result> DeleteByEmail(string email);
     }
 }
