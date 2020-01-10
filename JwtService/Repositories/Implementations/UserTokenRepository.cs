@@ -17,11 +17,11 @@ namespace JwtService.Repositories.Implementations
             _dbContext = dbContext;
         }
 
-        public async Task<Result> DeleteByUsername(string username)
+        public async Task<Result> DeleteByEmail(string email)
         {
             return await Result.DoAndReturnResultAsync(async () =>
             {
-                var queryTokens = _dbContext.Tokens.Where(token => token.Username == username);
+                var queryTokens = _dbContext.Tokens.Where(token => token.User.Email == email);
 
                 foreach (var userToken in await queryTokens.ToListAsync())
                 {

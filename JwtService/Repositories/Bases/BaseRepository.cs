@@ -19,7 +19,9 @@ namespace JwtService.Repositories.Bases
         {
             return await Result.DoAndReturnResultAsync(async () =>
             {
-                await _dbContext.AddAsync(entity);
+                if (entity.ID == 0)
+                    await _dbContext.AddAsync(entity);
+
                 await _dbContext.SaveChangesAsync();
             });
         }
@@ -31,6 +33,26 @@ namespace JwtService.Repositories.Bases
                 _dbContext.Remove(entity);
                 await _dbContext.SaveChangesAsync();
             });
+        }
+
+        public async Task<Result> Delete(long id)
+        {
+            var entity = (await FindById(id)).Value;
+
+            if (entity == null)
+                return Result.Ok();
+
+            return await Delete(entity);
+        }
+
+        public virtual async Task<Result<T>> FindById(long id)
+        {
+            var result = new Result<T>();
+            var value = await _dbContext.FindAsync<T>(id);
+            if (value == null)
+                return result.Add("Record not found.");
+
+            return result.Ok(value);
         }
     }
 }

@@ -8,5 +8,7 @@ namespace JwtService.Repositories.Interfaces
     {
         Task<Result> Save(T entity);
         Task<Result> Delete(T entity);
+        Task<Result> Delete(long id);
+        Task<Result<T>> FindById(long id);
     }
 }

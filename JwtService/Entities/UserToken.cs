@@ -1,16 +1,15 @@
-﻿using JwtService.Entities.Interfaces;
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace JwtService.Entities
 {
-    public class UserToken : IEntity
+    public class UserToken : BaseEntity
     {
-        [Key]
+        [Required]
         public string Token { get; set; }
 
         [Required]
-        public string Username { get; set; }
+        public User User { get; set; }
 
         [Required]
         public DateTimeOffset CreatedOn { get; set; }

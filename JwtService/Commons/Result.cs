@@ -35,6 +35,11 @@ namespace JwtService.Commons
 
             return result;
         }
+        public static Result Ok()
+        {
+            return new Result();
+        }
+
         public Result() : base()
         {
 

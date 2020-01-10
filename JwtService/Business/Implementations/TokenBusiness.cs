@@ -16,16 +16,13 @@ namespace JwtService.Business.Implementations
     public class TokenBusiness : ITokenBusiness
     {
         AppSettings _appSettings;
-        IUserBusiness _userBusiness;
         IUserTokenRepository _userTokenRepository;
 
         public TokenBusiness(
             IOptions<AppSettings> appSettings,
-            IUserBusiness userBusiness,
             IUserTokenRepository userTokenRepository)
         {
             _appSettings = appSettings.Value;
-            _userBusiness = userBusiness;
             _userTokenRepository = userTokenRepository;
         }
 
@@ -43,7 +40,7 @@ namespace JwtService.Business.Implementations
 
             string token = GenerateToken(tokenDescription);
 
-            var resultDeleteTokens = await _userTokenRepository.DeleteByUsername(user.Username);
+            var resultDeleteTokens = await _userTokenRepository.DeleteByEmail(user.Email);
             if (!resultDeleteTokens)
                 return resultDeleteTokens.Cast<string>();
 
@@ -77,7 +74,7 @@ namespace JwtService.Business.Implementations
             return new UserToken()
             {
                 CreatedOn = DateTimeOffset.UtcNow,
-                Username = user.Username,
+                User = user,
                 ExpirationMinutes = _appSettings.ExpirationMinutes,
                 Token = token
             };

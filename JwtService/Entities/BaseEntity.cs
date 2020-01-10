@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace JwtService.Entities
 {
-    public class BaseEntity : IEntityWithId
+    public class BaseEntity : IEntity
     {
         [Key]
         public long ID { get; private set; }
