@@ -7,6 +7,6 @@ namespace JwtService.Entities.Interfaces
 {
     public interface IEntity
     {
-        
+        long ID { get; }
     }
 }

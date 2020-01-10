@@ -74,7 +74,7 @@ namespace JwtService.Business.Implementations
             return new UserToken()
             {
                 CreatedOn = DateTimeOffset.UtcNow,
-                Email = user.Email,
+                User = user,
                 ExpirationMinutes = _appSettings.ExpirationMinutes,
                 Token = token
             };

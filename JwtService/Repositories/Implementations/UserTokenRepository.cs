@@ -21,7 +21,7 @@ namespace JwtService.Repositories.Implementations
         {
             return await Result.DoAndReturnResultAsync(async () =>
             {
-                var queryTokens = _dbContext.Tokens.Where(token => token.Email == email);
+                var queryTokens = _dbContext.Tokens.Where(token => token.User.Email == email);
 
                 foreach (var userToken in await queryTokens.ToListAsync())
                 {

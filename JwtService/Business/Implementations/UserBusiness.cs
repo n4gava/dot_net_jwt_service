@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System;
+using JwtService.Commons.Interfaces;
 
 namespace JwtService.Business.Implementations
 {
@@ -65,7 +66,13 @@ namespace JwtService.Business.Implementations
             user.LastName = userVO.LastName;
             user.Password = userVO.Password;
 
-            return (await _userRepository.Save(user)).Cast<User>();
+            var result = await _userRepository.Save(user);
+            return result;
+        }
+
+        public async Task<IResult> Delete(long userId)
+        {
+            return await _userRepository.Delete(userId);
         }
     }
 }

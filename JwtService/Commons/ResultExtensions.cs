@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace JwtService.Commons
 {
@@ -27,6 +26,7 @@ namespace JwtService.Commons
         public static Result<T> Add<T>(this Result<T> result, Exception exception)
         {
             result.AddError(exception.Message);
+
             return result;
         }
         public static Result<T> Add<T>(this Result<T> result, IEnumerable<string> errorMessages)

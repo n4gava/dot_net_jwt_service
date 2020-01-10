@@ -12,6 +12,14 @@ namespace JwtService.Database
 
         public DbSet<User> Users { get; set; }
         public DbSet<UserToken> Tokens { get; set; }
-        
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserToken>()
+                .HasIndex(token => token.Token)
+                .IsUnique();
+
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }
