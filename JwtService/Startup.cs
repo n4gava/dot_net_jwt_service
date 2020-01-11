@@ -22,7 +22,8 @@ namespace JwtService
         public void ConfigureServices(IServiceCollection services)
         {
             var appSettings = services.ConfigureAppSettings(Configuration.GetSection("AppSettings"));
-            
+
+            services.ConfigureSwagger();
             services.ConfigureDbContext(Configuration.GetConnectionString("SqlServerDatabase"));
             services.ConfigureAuthentication(appSettings);
 
@@ -47,7 +48,13 @@ namespace JwtService
             {
                 app.UseHsts();
             }
-            
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "JwtService");
+            });
+
             app.UseStaticFiles();
 
             app.UseRouting();

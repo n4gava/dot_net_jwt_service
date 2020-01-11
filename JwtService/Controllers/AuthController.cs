@@ -31,6 +31,8 @@ namespace JwtService.Controllers
         }
 
         [HttpPost("[action]")]
+        [ProducesResponseType(typeof(Result<AuthResponse>), 200)]
+        [ProducesResponseType(typeof(Result<AuthResponse>), 400)]
         public async Task<IResult> Login(LoginUser loginUser)
         {
             var result = await _signInBusiness.Login(loginUser.Email, loginUser.Password);
